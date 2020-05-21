@@ -24,6 +24,20 @@
  * analog pin 4: SDA : Connected to MPU6050[solder jumper is used]
  * analog pin 5: SCl : Connected to MPU6050[solder jumper is used]
 ***/
+
+#define gpsen 3
+#define  batcharge 4
+#define batfault 5
+#define mpuen 6
+#define gsmpwrctrl 7
+#define srx 8
+#define stx 9
+#define gsmint A0
+#define gsmlpg A1
+#define statusled1 10
+#define statusled2 A2
+#define statusled3 A3
+
 void setup() {
   // put your setup code here, to run once:
 
