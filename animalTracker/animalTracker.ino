@@ -38,12 +38,20 @@
 #define statusled2 A2
 #define statusled3 A3
 
-void setup() {
-  // put your setup code here, to run once:
-
+void setup()
+{
+  pinMode(gpsen, OUTPUT);
+  pinMode(mpuen, OUTPUT);
+  pinMode(batcharge, INPUT);
+  pinMode(batfault, INPUT);
+  pinMode(statusled1, OUTPUT);
+  pinMode(statusled2, OUTPUT);
+  pinMode(statusled3, OUTPUT);
+  digitalWrite(gpsen, HIGH);
+  digitalWrite(mpuen, HIGH);
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
+void loop() 
+{
 
 }
