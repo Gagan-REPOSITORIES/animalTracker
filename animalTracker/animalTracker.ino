@@ -92,6 +92,49 @@ int mpudata()
   Serial.println();
   return 0;
 }
+/**
+blink1 is battery status indicator
+blink2 is GSM status indicator
+blink3 is GPS and MPU6050 data indicator
+blink1 = 0 no issues with the battery
+blink1 = 1 battery is below 
+blink1 = 2 battery full / temp fault indicator
+blink1 = 3 battery fault indicator
+blink2 = 0 GSM and Microcontroller communication is properly established
+blink2 = 1 GSM at command is not responding
+blink2 = 2 GSM sim card not inserted
+blink2 = 3 sim card registration failed
+blink2 = 4 problem with connectivity to internet
+blink3 = 0 receiving proper data from both the GPS and MPU
+blink3 = 1 not receiving data from mpu6050
+blink3 = 2 not receiving data from GPS
+**/
+int statusind(int blink1,int blink2,int blink3)
+{
+  for(int i = 0;i<blink1;i++)
+  {
+    digitalWrite(statusled1, HIGH);
+    delay(250);
+    digitalWrite(statusled1, LOW);
+    delay(250);
+  }
+  for(int i = 0;i<blink2;i++)
+  {
+    digitalWrite(statusled2, HIGH);
+    delay(250);
+    digitalWrite(statusled2, LOW);
+    delay(250);
+  }
+  for(int i = 0;i<blink3;i++)
+  {
+    digitalWrite(statusled3, HIGH);
+    delay(250);
+    digitalWrite(statusled3, LOW);
+    delay(250);
+  }
+  return 0;
+}
+
 void setup()
 {
   pinMode(gpsen, OUTPUT);
@@ -109,10 +152,9 @@ void setup()
   Wire.beginTransmission(MPU_ADDR); // Begins a transmission to the I2C slave
   Wire.write(0x6B); // PWR_MGMT_1 register
   Wire.write(0); // set to zero (wakes up the MPU-6050)
-  Wire.endTransmission(true);
+  Wire.endTransmission(true);//ends the communication with the mpu6050
 }
 
 void loop() 
 {
-
 }
