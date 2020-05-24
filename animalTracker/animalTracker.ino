@@ -30,8 +30,8 @@
 #define batfault 5
 #define mpuen 6
 #define gsmpwrctrl 7
-#define srx 8
-#define stx 9
+#define stx 8
+#define srx 9
 #define gsmint A0
 #define gsmlpg A1
 #define statusled1 10
@@ -39,12 +39,15 @@
 #define statusled3 A3
 
 #include "Wire.h" // This library allows you to communicate with I2C devices.
+#include "SoftwareSerial.h" 
 
 const int MPU_ADDR = 0x68; // I2C address of the MPU-6050. If AD0 pin is set to HIGH, the I2C address will be 0x69.
 int16_t accelerometer_x, accelerometer_y, accelerometer_z; // variables for accelerometer raw data
 int16_t gyro_x, gyro_y, gyro_z; // variables for gyro raw data
 int16_t temperature; // variables for temperature data
 char tmp_str[7]; // temporary variable used in convert function
+
+SoftwareSerial mySerial(srx,stx);
 
 char* convert_int16_to_str(int16_t i) 
 { // converts int16 to string. Moreover, resulting strings will have the same length in the debug monitor.
@@ -78,6 +81,7 @@ int mpudata()
   Serial.print(convert_int16_to_str(accelerometer_z));
   // the following equation was taken from the documentation [MPU-6000/MPU-6050 Register Map and Description, p.30]
   Serial.print(" "); 
+  //Serial.print(" | temp = "); 
   Serial.print(temperature/340.00+36.53);
   //Serial.print(" | gX = "); 
   Serial.print(convert_int16_to_str(gyro_x));
@@ -86,7 +90,7 @@ int mpudata()
   //Serial.print(" | gZ = "); 
   Serial.print(convert_int16_to_str(gyro_z));
   Serial.println();
-  return 0
+  return 0;
 }
 void setup()
 {
