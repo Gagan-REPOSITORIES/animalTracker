@@ -26,7 +26,7 @@
 ***/
 
 #define gpsen 3
-#define  batcharge 4
+#define batcharge 4
 #define batfault 5
 #define mpuen 6
 #define gsmpwrctrl 7
@@ -46,6 +46,10 @@ int16_t accelerometer_x, accelerometer_y, accelerometer_z; // variables for acce
 int16_t gyro_x, gyro_y, gyro_z; // variables for gyro raw data
 int16_t temperature; // variables for temperature data
 char tmp_str[7]; // temporary variable used in convert function
+
+unsigned long previousMillis = 0;
+const long interval = 500;
+String a;
 
 SoftwareSerial mySerial(srx,stx);
 
@@ -98,8 +102,9 @@ blink2 is GSM status indicator
 blink3 is GPS and MPU6050 data indicator
 blink1 = 0 no issues with the battery
 blink1 = 1 battery is below 
-blink1 = 2 battery full / temp fault indicator
-blink1 = 3 battery fault indicator
+blink1 = 2 battery charging indicator
+blink1 = 3 battery full indicator
+blink1 = 4 battery fault indicator
 blink2 = 0 GSM and Microcontroller communication is properly established
 blink2 = 1 GSM at command is not responding
 blink2 = 2 GSM sim card not inserted
@@ -135,6 +140,23 @@ int statusind(int blink1,int blink2,int blink3)
   return 0;
 }
 
+/**
+ * batcharge = HIGH(1) battery is drawing less current than 1/10 of programmed
+ * batcharge = LOW(0) battery is drawing more current than 1/10 of programmed(battery charging)
+ * batfault = HIGH(1) when no fault is found connected to powersource
+ * batfault = LOW(0) when fault is found not connected to powersource
+**/
+int batstatus()
+{//checks for battery charging conditions
+  if(!digitalRead(batcharge))
+    statusind(2,0,0);
+  if(digitalRead(batcharge))
+    statusind(3,0,0);
+  if(!digitalRead(batfault))
+    statusind(4,0,0);
+  return 0;
+}
+
 void setup()
 {
   pinMode(gpsen, OUTPUT);
@@ -144,10 +166,15 @@ void setup()
   pinMode(statusled1, OUTPUT);
   pinMode(statusled2, OUTPUT);
   pinMode(statusled3, OUTPUT);
+  pinMode(stx, OUTPUT);
+  pinMode(srx, INPUT);
   digitalWrite(gpsen, HIGH);//turn on gps module
   digitalWrite(mpuen, HIGH);//turn on mpu6050
   delay(2000);//time delay of mpu6050 between turn ON and data transmission
   Serial.begin(9600); //baud rate of Serial Monitor
+  while(!Serial);
+  mySerial.begin(9600);
+  while(!mySerial);
   Wire.begin();//I2C communication begin
   Wire.beginTransmission(MPU_ADDR); // Begins a transmission to the I2C slave
   Wire.write(0x6B); // PWR_MGMT_1 register
@@ -157,4 +184,17 @@ void setup()
 
 void loop() 
 {
+  unsigned long currentMillis = millis();
+   if (currentMillis - previousMillis >= interval) 
+   {
+    previousMillis = currentMillis;
+    mySerial.println("at");
+    mySerial.flush();
+   }
+   while(mySerial.available()>0) 
+   {
+    a = mySerial.readString();
+    if (a.indexOf("OK") > 0)
+        digitalWrite(10,HIGH);
+   Serial.println(a);
 }
