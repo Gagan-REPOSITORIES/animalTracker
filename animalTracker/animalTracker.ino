@@ -156,7 +156,21 @@ int batstatus()
     statusind(4,0,0);
   return 0;
 }
-
+int at()
+{
+  for (int i = 0; i < 5; i++)
+  {
+    mySerial.println("at");
+    mySerial.flush();
+    delay(100);
+    while (mySerial.available())
+    {
+      if (mySerial.readString().indexOf("OK") > 0)
+        return true;
+    }
+  }
+  return false;
+}
 void setup()
 {
   pinMode(gpsen, OUTPUT);
