@@ -171,6 +171,35 @@ int at()
   }
   return false;
 }
+int csq()
+{
+  for (int i = 0; i < 5; i++)
+  {
+    mySerial.println("at+csq");
+    mySerial.flush();
+    delay(100);
+    while (mySerial.available())
+    {
+      if (mySerial.readString().indexOf("+CSQ:") > 0)
+        return true;
+    }
+  }
+}
+
+int cbc()
+{
+  for (int i = 0; i < 5; i++)
+  {
+    mySerial.println("at+cbc");
+    mySerial.flush();
+    delay(100);
+    while (mySerial.available())
+    {
+      if (mySerial.readString().indexOf("+CBC:") > 0)
+        return true;
+    }
+  }
+}
 void setup()
 {
   pinMode(gpsen, OUTPUT);
