@@ -230,6 +230,36 @@ int creg()
     }
   }
 }
+
+int cgreg()
+{
+  for (int i = 0; i < 5; i++)
+  {
+    mySerial.println("at+crgeg?");
+    mySerial.flush();
+    delay(100);
+    while (mySerial.available())
+    {
+      if (mySerial.readString().indexOf("+CGREG:") > 0)
+        return true;
+    }
+  }
+}
+int msmpd()
+{
+  for (int i = 0; i < 5; i++)
+  {
+    mySerial.println("at+msmpd=1");
+    mySerial.flush();
+    delay(100);
+    while (mySerial.available())
+    {
+      if (mySerial.readString().indexOf("OK") > 0)
+        return true;
+    }
+  }
+}
+
 void setup()
 {
   pinMode(gpsen, OUTPUT);
@@ -270,4 +300,5 @@ void loop()
     if (a.indexOf("OK") > 0)
         digitalWrite(10,HIGH);
    Serial.println(a);
+   }
 }
