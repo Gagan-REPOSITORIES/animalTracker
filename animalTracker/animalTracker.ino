@@ -200,6 +200,36 @@ int cbc()
     }
   }
 }
+
+int cpin()
+{
+  for (int i = 0; i < 5; i++)
+  {
+    mySerial.println("at+cpin?");
+    mySerial.flush();
+    delay(100);
+    while (mySerial.available())
+    {
+      if (mySerial.readString().indexOf("+CPIN: READY") > 0)
+        return true;
+    }
+  }
+}
+
+int creg()
+{
+  for (int i = 0; i < 5; i++)
+  {
+    mySerial.println("at+creg?");
+    mySerial.flush();
+    delay(100);
+    while (mySerial.available())
+    {
+      if (mySerial.readString().indexOf("+CREG:") > 0)
+        return true;
+    }
+  }
+}
 void setup()
 {
   pinMode(gpsen, OUTPUT);
