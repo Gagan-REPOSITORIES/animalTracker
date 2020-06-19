@@ -48,8 +48,9 @@ int16_t temperature; // variables for temperature data
 char tmp_str[7]; // temporary variable used in convert function
 
 unsigned long previousMillis = 0;
-const long interval = 500;
+const long interval = 60;//enter numbers in seconds like 60 for 60seconds
 String a;
+int volt = 0;
 
 SoftwareSerial mySerial(srx,stx);
 
@@ -97,9 +98,9 @@ int mpudata()
   return 0;
 }
 /**
-blink1 is battery status indicator
-blink2 is GSM status indicator
-blink3 is GPS and MPU6050 data indicator
+blink1 is battery status indicator D9 led
+blink2 is GSM status indicator D7 led
+blink3 is GPS and MPU6050 data indicator D8 led
 blink1 = 0 no issues with the battery
 blink1 = 1 battery is below 
 blink1 = 2 battery charging indicator
@@ -171,41 +172,30 @@ int at()
   }
   return false;
 }
-int csq()
-{
-  for (int i = 0; i < 5; i++)
-  {
-    mySerial.println("at+csq");
-    mySerial.flush();
-    delay(100);
-    while (mySerial.available())
-    {
-      if (mySerial.readString().indexOf("+CSQ:") > 0)
-        return true;
-    }
-  }
-}
 
 int cbc()
 {
   for (int i = 0; i < 5; i++)
   {
-    mySerial.println("at+cbc");
+    mySerial.println("at+cbc");//+CBC: 0,3663 
     mySerial.flush();
     delay(100);
     while (mySerial.available())
     {
-      if (mySerial.readString().indexOf("+CBC:") > 0)
-        return true;
+     a = mySerial.readString();
+     a.remove(0,a.indexOf("+CBC: 0,")+8);
+     a.remove(4);
+     return a.toInt();
     }
   }
+  return false;
 }
 
 int cpin()
 {
   for (int i = 0; i < 5; i++)
   {
-    mySerial.println("at+cpin?");
+    mySerial.println("at+cpin?");//ERROR
     mySerial.flush();
     delay(100);
     while (mySerial.available())
@@ -214,28 +204,30 @@ int cpin()
         return true;
     }
   }
+  return false;
 }
 
 int creg()
 {
   for (int i = 0; i < 5; i++)
   {
-    mySerial.println("at+creg?");
+    mySerial.println("at+creg?");//+CREG: 0,0 without sim card
     mySerial.flush();
     delay(100);
     while (mySerial.available())
     {
-      if (mySerial.readString().indexOf("+CREG:") > 0)
+      if (mySerial.readString().indexOf("+CREG: 0,1" || "+CREG: 0,5") > 0)
         return true;
     }
   }
+  return false;
 }
 
 int cgreg()
 {
   for (int i = 0; i < 5; i++)
   {
-    mySerial.println("at+crgeg?");
+    mySerial.println("at+crgeg?");// ERROR
     mySerial.flush();
     delay(100);
     while (mySerial.available())
@@ -245,6 +237,7 @@ int cgreg()
     }
   }
 }
+//used for hot plugging of sim card
 int msmpd()
 {
   for (int i = 0; i < 5; i++)
@@ -283,10 +276,31 @@ void setup()
   Wire.write(0x6B); // PWR_MGMT_1 register
   Wire.write(0); // set to zero (wakes up the MPU-6050)
   Wire.endTransmission(true);//ends the communication with the mpu6050
+  if(at()==false)
+  statusind(0,1,0);
+  if(cpin()==false)
+  statusind(0,2,0);
+  msmpd();
+  batstatus();
 }
 
 void loop() 
 {
+  unsigned long currentMillis = millis()/1000;
+   if (currentMillis - previousMillis >= interval) 
+   {
+    previousMillis = currentMillis;
+    if(creg()==false)
+    statusind(0,3,0);
+   }
+   if (currentMillis - previousMillis >= 10) 
+   {
+    previousMillis = currentMillis;
+    volt = cbc();
+    //Serial.println(volt);
+   }
+}
+ /*
   unsigned long currentMillis = millis();
    if (currentMillis - previousMillis >= interval) 
    {
@@ -300,5 +314,4 @@ void loop()
     if (a.indexOf("OK") > 0)
         digitalWrite(10,HIGH);
    Serial.println(a);
-   }
-}
+   }*/
