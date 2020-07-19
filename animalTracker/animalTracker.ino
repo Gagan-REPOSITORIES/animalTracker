@@ -157,6 +157,11 @@ int batstatus()
     statusind(4,0,0);
   return 0;
 }
+
+/**
+ * Microcontroller sends AT command to GSM module
+ * GSM will reply only if the baudrate and other things matches properly 
+ **/
 int at()
 {
   for (int i = 0; i < 5; i++)
@@ -173,6 +178,10 @@ int at()
   return false;
 }
 
+/**
+ * Microcontroller gets the battery voltage from the GSM module
+ * The function returns the integer value without the decimal point like 3300
+ **/
 int cbc()
 {
   for (int i = 0; i < 5; i++)
@@ -191,6 +200,10 @@ int cbc()
   return false;
 }
 
+/**
+ * Checks the simcard presence in the device, if sim card is present then GSM will reply with READY
+ * if simcard is not present the module will reply with error
+ **/
 int cpin()
 {
   for (int i = 0; i < 5; i++)
@@ -207,6 +220,10 @@ int cpin()
   return false;
 }
 
+/**
+ * Checks the simcard registration with network
+ * if registered returns true else false
+ **/
 int creg()
 {
   for (int i = 0; i < 5; i++)
@@ -223,6 +240,10 @@ int creg()
   return false;
 }
 
+/**
+ * Checks the simcard GPRS registration 
+ * if GPRS is enabled then returns TRUE else False
+ **/
 int cgreg()
 {
   for (int i = 0; i < 5; i++)
@@ -264,8 +285,11 @@ void setup()
   pinMode(statusled3, OUTPUT);
   pinMode(stx, OUTPUT);
   pinMode(srx, INPUT);
+  statusind(2,0,0);//indicates the working condition of ATmega328;blinks the blinks twice
+  digitalWrite(mpuen, HIGH);//turn on mpu6050 just to check working
+  delay(250);
+  digitalWrite(mpuen, LOW);//turn off mpu6050 after confirming the power converter is working
   digitalWrite(gpsen, HIGH);//turn on gps module
-  digitalWrite(mpuen, HIGH);//turn on mpu6050
   delay(2000);//time delay of mpu6050 between turn ON and data transmission
   Serial.begin(9600); //baud rate of Serial Monitor
   while(!Serial);
@@ -276,12 +300,11 @@ void setup()
   Wire.write(0x6B); // PWR_MGMT_1 register
   Wire.write(0); // set to zero (wakes up the MPU-6050)
   Wire.endTransmission(true);//ends the communication with the mpu6050
-  if(at()==false)
+  if(at()==false) // Check the GSM connection established with atmega328; if connection is not established the led will blink once
   statusind(0,1,0);
-  if(cpin()==false)
+  if(cpin()==false)// Check the sim card presence in the module; if the sim card is not present led will blink twice
   statusind(0,2,0);
   msmpd();
-  batstatus();
 }
 
 void loop() 
@@ -297,6 +320,7 @@ void loop()
    {
     previousMillis = currentMillis;
     volt = cbc();
+    batstatus();
     //Serial.println(volt);
    }
 }
