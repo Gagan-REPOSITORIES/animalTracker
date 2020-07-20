@@ -80,24 +80,28 @@ int mpudata()
   
   // print out data
   //Serial.print("aX = "); 
-  Serial.print(convert_int16_to_str(accelerometer_x));
+  //Serial.print(convert_int16_to_str(accelerometer_x));
   //Serial.print(" | aY = "); 
-  Serial.print(convert_int16_to_str(accelerometer_y));
-  Serial.print(" ");
+  //Serial.print(convert_int16_to_str(accelerometer_y));
+  //Serial.print(" ");
   //Serial.print(" | aZ = "); 
-  Serial.print(convert_int16_to_str(accelerometer_z));
+  //Serial.print(convert_int16_to_str(accelerometer_z));
   // the following equation was taken from the documentation [MPU-6000/MPU-6050 Register Map and Description, p.30]
-  Serial.print(" "); 
+  //Serial.print(" "); 
   //Serial.print(" | temp = "); 
-  Serial.print(temperature/340.00+36.53);
+  //Serial.print(temperature/340.00+36.53);
   //Serial.print(" | gX = "); 
-  Serial.print(convert_int16_to_str(gyro_x));
+  //Serial.print(convert_int16_to_str(gyro_x));
   //Serial.print(" | gY = "); 
-  Serial.print(convert_int16_to_str(gyro_y));
+  //Serial.print(convert_int16_to_str(gyro_y));
   //Serial.print(" | gZ = "); 
-  Serial.print(convert_int16_to_str(gyro_z));
-  Serial.println();
-  return 0;
+  //Serial.print(convert_int16_to_str(gyro_z));
+  //Serial.println();
+  if(temperature == 0)
+    return false;
+  else
+    return true;
+  
 }
 /**
 blink1 is battery status indicator D9 led
@@ -340,6 +344,8 @@ int regularCheck()
   statusind(0,3,0);
   if(getgpsdata()==false)
   statusind(0,0,2);
+  if(mpudata() == false)
+  statusind(0,0,1);
 }
 
 void setup()
