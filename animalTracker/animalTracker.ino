@@ -40,6 +40,7 @@
 
 #include "Wire.h" // This library allows you to communicate with I2C devices.
 #include "SoftwareSerial.h" 
+#include <avr/wdt.h> //for watchdog timer
 
 const int MPU_ADDR = 0x68; // I2C address of the MPU-6050. If AD0 pin is set to HIGH, the I2C address will be 0x69.
 int16_t accelerometer_x, accelerometer_y, accelerometer_z; // variables for accelerometer raw data
@@ -370,6 +371,7 @@ void setup()
   if(cpin()==false)// Check the sim card presence in the module; if the sim card is not present led will blink twice
   statusind(0,2,0);
   msmpd();
+  wdt_enable(WDTO_8S);//enables watchdog timer for 8S
 }
 
 void loop() 
@@ -387,6 +389,7 @@ void loop()
     batstatus();
     //Serial.println(volt);
    }
+   wdt_reset();//resets watch dog timer and if stuck anywhere it will restart the controller
 }
  /*
   unsigned long currentMillis = millis();
