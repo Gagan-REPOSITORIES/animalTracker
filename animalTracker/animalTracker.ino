@@ -50,6 +50,7 @@ char tmp_str[7]; // temporary variable used in convert function
 unsigned long previousMillis = 0;
 const long interval = 60;//enter numbers in seconds like 60 for 60seconds
 String a;
+String gpsdata;
 int volt = 0;
 
 SoftwareSerial mySerial(srx,stx);
@@ -295,7 +296,27 @@ int gpspowerON()
   return false;
 }
 
-
+/**
+ * Fetches GPS RMC data
+ * if not available returns false
+ * if available returns true and stores in the gps data
+ **/
+int getgpsdata()
+{
+  mySerial.println("at+gtgps=\"RMC\"");
+  mySerial.flush();
+  delay(100);
+  while (mySerial.available())
+  {
+    gpsdata = mySerial.readString();
+    if (gpsdata.indexOf("A,") > 0)
+    {
+      gpsdata = gpsdata.substring(gpsdata.indexOf("A,") + 2, gpsdata.indexOf("A,") + 28);
+      return true;
+    }
+  } //Serial.println(mySerial.readString().length());
+  return false;
+}
 
 /**
  * Checks the battery Voltage and charging levels
@@ -316,6 +337,8 @@ int regularCheck()
   statusind(0,2,0);
   if(creg()==false)//checks network registration
   statusind(0,3,0);
+  if(getgpsdata()==false)
+  statusind(0,0,2);
 }
 
 void setup()
