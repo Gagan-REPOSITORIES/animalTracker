@@ -274,6 +274,50 @@ int msmpd()
   }
 }
 
+/**
+ * Turn ON the GPS with GSM
+ * its not required bcoz the microcontroller controls the power input to gps
+ * written this function to avoid error
+ **/
+int gpspowerON()
+{
+  for (int i = 0; i < 5; i++)
+  {
+    mySerial.println("at+gtgpspower=1");
+    mySerial.flush();
+    delay(100);
+    while (mySerial.available())
+    {
+      if (mySerial.readString().indexOf("OK") > 0)
+        return true;
+    }
+  }
+  return false;
+}
+
+
+
+/**
+ * Checks the battery Voltage and charging levels
+ **/
+int regularCheck()
+{
+  batstatus();//checks the charging conditions of battery
+  volt = cbc();//gets battery voltage in integer number
+  if(volt<3400)
+  {
+  statusind(1,0,0);
+  digitalWrite(mpuen, LOW);//turn off mpu6050
+  digitalWrite(gpsen, LOW);//turn off gps
+  }
+  if(at()==false)//checks gsm and microcontroller communication
+  statusind(0,1,0);
+  if(cpin()==false)//checks simcard presence
+  statusind(0,2,0);
+  if(creg()==false)//checks network registration
+  statusind(0,3,0);
+}
+
 void setup()
 {
   pinMode(gpsen, OUTPUT);
@@ -287,8 +331,6 @@ void setup()
   pinMode(srx, INPUT);
   statusind(2,0,0);//indicates the working condition of ATmega328;blinks the blinks twice
   digitalWrite(mpuen, HIGH);//turn on mpu6050 just to check working
-  delay(250);
-  digitalWrite(mpuen, LOW);//turn off mpu6050 after confirming the power converter is working
   digitalWrite(gpsen, HIGH);//turn on gps module
   delay(2000);//time delay of mpu6050 between turn ON and data transmission
   Serial.begin(9600); //baud rate of Serial Monitor
@@ -310,11 +352,10 @@ void setup()
 void loop() 
 {
   unsigned long currentMillis = millis()/1000;
-   if (currentMillis - previousMillis >= interval) 
+   if (currentMillis - previousMillis >= interval*2) 
    {
     previousMillis = currentMillis;
-    if(creg()==false)
-    statusind(0,3,0);
+    regularCheck();
    }
    if (currentMillis - previousMillis >= 10) 
    {
