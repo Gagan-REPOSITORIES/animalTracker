@@ -325,6 +325,7 @@ int getgpsdata()
 
 /**
  * Checks the battery Voltage and charging levels
+ * other routine checks 
  **/
 int regularCheck()
 {
@@ -346,6 +347,25 @@ int regularCheck()
   statusind(0,0,2);
   if(mpudata() == false)
   statusind(0,0,1);
+}
+/**
+ * sets up a PPP (Point to Point Protocol) connection with the GGSN (Gate GPRS SupportNode)
+ * returns a valid dynamic IP for the Module
+ **/
+int mipcall()
+{
+  for (int i = 0; i < 5; i++)
+  {
+    mySerial.println("AT+MIPCALL=1,\"internet\"");
+    mySerial.flush();
+    delay(2000);
+    while (mySerial.available())
+    {
+      if (mySerial.readString().indexOf("+MIPCALL:") > 0)
+        return true;
+    }
+  }
+  return false;
 }
 
 void setup()
