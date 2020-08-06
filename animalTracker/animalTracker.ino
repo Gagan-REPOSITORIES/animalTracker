@@ -79,25 +79,26 @@ int mpudata()
   gyro_z = Wire.read()<<8 | Wire.read(); // reading registers: 0x47 (GYRO_ZOUT_H) and 0x48 (GYRO_ZOUT_L)
   
   // print out data
-  //Serial.print("aX = "); 
-  //Serial.print(convert_int16_to_str(accelerometer_x));
-  //Serial.print(" | aY = "); 
-  //Serial.print(convert_int16_to_str(accelerometer_y));
-  //Serial.print(" ");
-  //Serial.print(" | aZ = "); 
-  //Serial.print(convert_int16_to_str(accelerometer_z));
+  // Serial.print("aX = "); 
+  // Serial.print(convert_int16_to_str(accelerometer_x));
+  // Serial.print(" | aY = "); 
+  // Serial.print(convert_int16_to_str(accelerometer_y));
+  // Serial.print(" ");
+  // Serial.print(" | aZ = "); 
+  // Serial.print(convert_int16_to_str(accelerometer_z));
   // the following equation was taken from the documentation [MPU-6000/MPU-6050 Register Map and Description, p.30]
-  //Serial.print(" "); 
-  //Serial.print(" | temp = "); 
-  //Serial.print(temperature/340.00+36.53);
-  //Serial.print(" | gX = "); 
-  //Serial.print(convert_int16_to_str(gyro_x));
-  //Serial.print(" | gY = "); 
-  //Serial.print(convert_int16_to_str(gyro_y));
-  //Serial.print(" | gZ = "); 
-  //Serial.print(convert_int16_to_str(gyro_z));
-  //Serial.println();
-  if(temperature == 0)
+  // Serial.print(" "); 
+  // Serial.print(" | temp = "); 
+  // Serial.print(temperature/340.00+36.53);
+  // Serial.print(" | gX = "); 
+  // Serial.print(convert_int16_to_str(gyro_x));
+  // Serial.print(" | gY = "); 
+  // Serial.print(convert_int16_to_str(gyro_y));
+  // Serial.print(" | gZ = "); 
+  // Serial.print(convert_int16_to_str(gyro_z));
+  // Serial.println();
+  //if data is absence or mpu is not responding then send false
+  if(accelerometer_x == -1 && accelerometer_y == -1 && accelerometer_z == -1)
     return false;
   else
     return true;
@@ -334,8 +335,8 @@ int regularCheck()
   if(volt<3400)
   {
   statusind(1,0,0);
-  digitalWrite(mpuen, LOW);//turn off mpu6050
-  digitalWrite(gpsen, LOW);//turn off gps
+  digitalWrite(mpuen, LOW);//turn off mpu6050 when battery level is below certain limit
+  digitalWrite(gpsen, LOW);//turn off gps when battery level is below certain limit
   }
   if(at()==false)//checks gsm and microcontroller communication
   statusind(0,1,0);
@@ -396,8 +397,11 @@ void setup()
   statusind(0,1,0);
   if(cpin()==false)// Check the sim card presence in the module; if the sim card is not present led will blink twice
   statusind(0,2,0);
+  if(mpudata() == false)//Check the mpu6050 data; if we are not getting data led will blink once
+  statusind(0,0,1);
   msmpd();
   wdt_enable(WDTO_8S);//enables watchdog timer for 8S
+  Serial.println("Program is running and Setup is done");
 }
 
 void loop() 
@@ -408,7 +412,7 @@ void loop()
     previousMillis = currentMillis;
     regularCheck();
    }
-   if (currentMillis - previousMillis >= 10) 
+   if (currentMillis - previousMillis >= interval*2) 
    {
     previousMillis = currentMillis;
     volt = cbc();
