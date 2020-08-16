@@ -54,6 +54,7 @@ String a;
 String gpsdata;
 int volt = 0;
 bool TCPconn = false;
+bool dataline = false;
 
 SoftwareSerial mySerial(srx,stx);
 
@@ -411,6 +412,26 @@ int establishTCP()
   return false;
 }
 
+/**
+ * Closes TCP Connection properly so that next time there wont be any problem at the Server side
+ **/
+void closeTCP()
+{
+ for (int i = 0; i < 5; i++)
+  {
+    mySerial.print("DISCONNECT");
+    mySerial.flush();
+    delay(2000);
+    while (mySerial.available())
+    {
+      if (mySerial.readString().indexOf("+DISCONNECT") > 0)
+        dataline = false;
+    }
+  }
+  if(mipcall_close()==true)
+  TCPconn = false;
+}
+
 void setup()
 {
   pinMode(gpsen, OUTPUT);
@@ -451,35 +472,37 @@ void setup()
 
 void loop() 
 {
+  wdt_reset();//added in begining to avoid failure due to other lines duration
   unsigned long currentMillis = millis()/1000;
-   if (currentMillis - previousMillis >= interval*2) 
-   {
+  if (currentMillis - previousMillis >= interval*2) 
+  {
     previousMillis = currentMillis;
     regularCheck();
-   }
-   if (currentMillis - previousMillis >= interval) 
-   {
+  }
+  if (currentMillis - previousMillis >= interval) 
+  {
     previousMillis = currentMillis;
-    //volt = cbc();
-    //batstatus();
-    //Serial.println(volt);
-   }
-   delay(1000);
-   Serial.println("Program Author : GAGAN DEEPAK R");
-   wdt_reset();//resets watch dog timer and if stuck anywhere it will restart the controller
+    if(establishTCP()==false)
+      statusind(0,4,0); //blinks 4 times when trouble in tcp connection
+  }
+  if(mySerial.available()>0 && TCPconn)
+  {
+    while (mySerial.available())
+    {
+      a = mySerial.readString();
+      if (a.indexOf("+CONNECT") > 0)
+        dataline = true;
+    }
+  }
+  delay(1000);
+  Serial.println("Program Author : GAGAN DEEPAK R");
+  wdt_reset();//resets watch dog timer and if stuck anywhere it will restart the controller
+  if(TCPconn && dataline)
+  { //Send TCP data in this block
+    mySerial.print("SerialData1");
+    mySerial.print("SerialData2");
+    mySerial.print("SerialData3");
+    mySerial.print("SerialData4");
+    closeTCP();
+  }
 }
- /*
-  unsigned long currentMillis = millis();
-   if (currentMillis - previousMillis >= interval) 
-   {
-    previousMillis = currentMillis;
-    mySerial.println("at");
-    mySerial.flush();
-   }
-   while(mySerial.available()>0) 
-   {
-    a = mySerial.readString();
-    if (a.indexOf("OK") > 0)
-        digitalWrite(10,HIGH);
-   Serial.println(a);
-   }*/
