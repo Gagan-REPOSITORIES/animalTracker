@@ -242,7 +242,8 @@ int creg()
     delay(100);
     while (mySerial.available())
     {
-      if (mySerial.readString().indexOf("+CREG: 0,1" || "+CREG: 0,5") > 0)
+      a = mySerial.readString();
+      if ((a.indexOf("+CREG: 0,5") || a.indexOf("+CREG: 0,1")) > 0)
         return true;
     }
   }
@@ -363,10 +364,10 @@ int mipcall_close()
   {
     mySerial.println("AT+MIPCALL=0");
     mySerial.flush();
-    delay(1300);
+    delay(100);
     while (mySerial.available())
     {
-      if (mySerial.readString().indexOf("+MIPCALL: 0") > 0)
+      if (mySerial.readString().indexOf("OK") > 0)
         return true;
     }
   }
@@ -382,14 +383,14 @@ int mipodm()
   {
     mySerial.println("AT+MIPODM=1,41960,\"GuhanGagan-41960.portmap.host\",41960,0");
     mySerial.flush();
-    delay(3000);
+    delay(100);
     while (mySerial.available())
     {
-      if (mySerial.readString().indexOf("+MIPODM: 1,1") > 0)
+      if (mySerial.readString().indexOf("OK") > 0)
         return true;
     }
   }
-  return false;
+  return true;
 }
 
 /**
@@ -403,33 +404,12 @@ int establishTCP()
     {
       if(mipodm()==true)
       {
-        wdt_reset();
         TCPconn = true;
         return true;
       }
     }
   }
   return false;
-}
-
-/**
- * Closes TCP Connection properly so that next time there wont be any problem at the Server side
- **/
-void closeTCP()
-{
- for (int i = 0; i < 5; i++)
-  {
-    mySerial.print("DISCONNECT");
-    mySerial.flush();
-    delay(2000);
-    while (mySerial.available())
-    {
-      if (mySerial.readString().indexOf("+DISCONNECT") > 0)
-        dataline = false;
-    }
-  }
-  if(mipcall_close()==true)
-  TCPconn = false;
 }
 
 void setup()
@@ -490,8 +470,16 @@ void loop()
     while (mySerial.available())
     {
       a = mySerial.readString();
-      if (a.indexOf("+CONNECT") > 0)
+      if (a.indexOf("CONNECT") > 0)
         dataline = true;
+      if (a.indexOf("+MIPODM: 1,1") > 0)
+        TCPconn = true;
+      if (a.indexOf("+MIPSTAT: 1,1") > 0)
+      {
+        TCPconn = false;
+        mipcall_close();
+        statusind(0,4,0);
+      }
     }
   }
   delay(1000);
@@ -499,10 +487,13 @@ void loop()
   wdt_reset();//resets watch dog timer and if stuck anywhere it will restart the controller
   if(TCPconn && dataline)
   { //Send TCP data in this block
-    mySerial.print("SerialData1");
-    mySerial.print("SerialData2");
-    mySerial.print("SerialData3");
-    mySerial.print("SerialData4");
-    closeTCP();
+    mySerial.println("SerialData1");
+    mySerial.println("SerialData2");
+    mySerial.println("SerialData3");
+    mySerial.println("SerialData4");
+    mySerial.println("DISCONNECT");
+    delay(500);
+    if(mipcall_close()==true)
+      TCPconn = false;
   }
 }
