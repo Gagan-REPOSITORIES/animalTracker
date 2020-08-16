@@ -118,7 +118,7 @@ blink2 = 0 GSM and Microcontroller communication is properly established
 blink2 = 1 GSM at command is not responding
 blink2 = 2 GSM sim card not inserted
 blink2 = 3 sim card registration failed
-blink2 = 4 problem with connectivity to internet
+blink2 = 4 problem with connectivity to TCP
 blink3 = 0 receiving proper data from both the GPS and MPU
 blink3 = 1 not receiving data from mpu6050
 blink3 = 2 not receiving data from GPS
@@ -248,24 +248,6 @@ int creg()
   return false;
 }
 
-/**
- * Checks the simcard GPRS registration 
- * if GPRS is enabled then returns TRUE else False
- **/
-int cgreg()
-{
-  for (int i = 0; i < 5; i++)
-  {
-    mySerial.println("at+crgeg?");// ERROR
-    mySerial.flush();
-    delay(100);
-    while (mySerial.available())
-    {
-      if (mySerial.readString().indexOf("+CGREG:") > 0)
-        return true;
-    }
-  }
-}
 //used for hot plugging of sim card
 int msmpd()
 {
@@ -478,8 +460,8 @@ void loop()
    if (currentMillis - previousMillis >= interval) 
    {
     previousMillis = currentMillis;
-    volt = cbc();
-    batstatus();
+    //volt = cbc();
+    //batstatus();
     //Serial.println(volt);
    }
    delay(1000);
