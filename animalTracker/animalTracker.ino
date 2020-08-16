@@ -53,6 +53,7 @@ const long interval = 60;//enter numbers in seconds like 60 for 60seconds
 String a;
 String gpsdata;
 int volt = 0;
+bool TCPconn = false;
 
 SoftwareSerial mySerial(srx,stx);
 
@@ -359,11 +360,70 @@ int mipcall()
   {
     mySerial.println("AT+MIPCALL=1,\"internet\"");
     mySerial.flush();
-    delay(2000);
+    delay(1000);
     while (mySerial.available())
     {
       if (mySerial.readString().indexOf("+MIPCALL:") > 0)
         return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Terminates the PPP connection with server 
+ * If established connection is not closed properly there will be problem in reconnecting to server again
+ **/
+int mipcall_close()
+{
+  for (int i = 0; i < 5; i++)
+  {
+    mySerial.println("AT+MIPCALL=0");
+    mySerial.flush();
+    delay(1300);
+    while (mySerial.available())
+    {
+      if (mySerial.readString().indexOf("+MIPCALL: 0") > 0)
+        return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Connects to TCP server with specified IP address and port number
+ **/
+int mipodm()
+{
+  for (int i = 0; i < 5; i++)
+  {
+    mySerial.println("AT+MIPODM=1,41960,\"GuhanGagan-41960.portmap.host\",41960,0");
+    mySerial.flush();
+    delay(3000);
+    while (mySerial.available())
+    {
+      if (mySerial.readString().indexOf("+MIPODM: 1,1") > 0)
+        return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Establishes TCP connection to communicate without any error
+ **/
+int establishTCP()
+{
+  if(creg()==true)
+  {
+    if(mipcall()==true)
+    {
+      if(mipodm()==true)
+      {
+        wdt_reset();
+        TCPconn = true;
+        return true;
+      }
     }
   }
   return false;
@@ -398,7 +458,10 @@ void setup()
   if(cpin()==false)// Check the sim card presence in the module; if the sim card is not present led will blink twice
   statusind(0,2,0);
   if(mpudata() == false)//Check the mpu6050 data; if we are not getting data led will blink once
-  statusind(0,0,1);
+  {
+    statusind(0,0,1);//blinks once
+    digitalWrite(mpuen,LOW);//turns off mpu6050 when not getting data
+  }
   msmpd();
   wdt_enable(WDTO_8S);//enables watchdog timer for 8S
   Serial.println("Program is running and Setup is done");
@@ -412,13 +475,15 @@ void loop()
     previousMillis = currentMillis;
     regularCheck();
    }
-   if (currentMillis - previousMillis >= interval*2) 
+   if (currentMillis - previousMillis >= interval) 
    {
     previousMillis = currentMillis;
     volt = cbc();
     batstatus();
     //Serial.println(volt);
    }
+   delay(1000);
+   Serial.println("Program Author : GAGAN DEEPAK R");
    wdt_reset();//resets watch dog timer and if stuck anywhere it will restart the controller
 }
  /*
