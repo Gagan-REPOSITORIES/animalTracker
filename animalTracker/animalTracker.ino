@@ -25,7 +25,6 @@
  * analog pin 5: SCl : Connected to MPU6050[solder jumper is used]
 ***/
 
-#define gpsen 3
 #define batcharge 4
 #define batfault 5
 #define mpuen 6
@@ -55,6 +54,7 @@ String gpsdata;
 int volt = 0;
 bool TCPconn = false;
 bool dataline = false;
+bool gpspower = false;
 
 SoftwareSerial mySerial(srx,stx);
 
@@ -268,7 +268,7 @@ int msmpd()
 
 /**
  * Turn ON the GPS with GSM
- * its not required bcoz the microcontroller controls the power input to gps
+ * disconnected the microcontroller power to the GPS now only GSM has the control over GNSS
  * written this function to avoid error
  **/
 int gpspowerON()
@@ -281,31 +281,36 @@ int gpspowerON()
     while (mySerial.available())
     {
       if (mySerial.readString().indexOf("OK") > 0)
+      {
+        gpspower = true;
         return true;
+      }
     }
   }
   return false;
 }
 
 /**
- * Fetches GPS RMC data
- * if not available returns false
- * if available returns true and stores in the gps data
+ * Turn OFF the GPS with GSM
+ * GPS will go to the hot start mode i.e gps will be in sleep mode
+ * written this function to avoid error
  **/
-int getgpsdata()
+int gpspowerOFF()
 {
-  mySerial.println("at+gtgps=\"RMC\"");
-  mySerial.flush();
-  delay(100);
-  while (mySerial.available())
+  for (int i = 0; i < 5; i++)
   {
-    gpsdata = mySerial.readString();
-    if (gpsdata.indexOf("A,") > 0)
+    mySerial.println("at+gtgpspower=0");
+    mySerial.flush();
+    delay(100);
+    while (mySerial.available())
     {
-      gpsdata = gpsdata.substring(gpsdata.indexOf("A,") + 2, gpsdata.indexOf("A,") + 28);
-      return true;
+      if (mySerial.readString().indexOf("OK") > 0)
+      {
+        gpspower = false;
+        return true;
+      }
     }
-  } //Serial.println(mySerial.readString().length());
+  }
   return false;
 }
 
@@ -321,7 +326,6 @@ int regularCheck()
   {
   statusind(1,0,0);
   digitalWrite(mpuen, LOW);//turn off mpu6050 when battery level is below certain limit
-  digitalWrite(gpsen, LOW);//turn off gps when battery level is below certain limit
   }
   if(at()==false)//checks gsm and microcontroller communication
   statusind(0,1,0);
@@ -412,9 +416,21 @@ int establishTCP()
   return false;
 }
 
+void serialEvent()
+{
+  while(Serial.available()>0 && gpspower)
+  {
+    a = Serial.readString();
+    if (a.indexOf("$GNRMC") > 0)
+    {
+      gpsdata = gpsdata.substring(gpsdata.indexOf("A,") + 2, gpsdata.indexOf("A,") + 28);
+      return true;
+    }
+  }
+}
+
 void setup()
 {
-  pinMode(gpsen, OUTPUT);
   pinMode(mpuen, OUTPUT);
   pinMode(batcharge, INPUT);
   pinMode(batfault, INPUT);
@@ -425,7 +441,6 @@ void setup()
   pinMode(srx, INPUT);
   statusind(2,0,0);//indicates the working condition of ATmega328;blinks the blinks twice
   digitalWrite(mpuen, HIGH);//turn on mpu6050 just to check working
-  digitalWrite(gpsen, HIGH);//turn on gps module
   delay(2000);//time delay of mpu6050 between turn ON and data transmission
   Serial.begin(9600); //baud rate of Serial Monitor
   while(!Serial);
@@ -497,3 +512,25 @@ void loop()
       TCPconn = false;
   }
 }
+
+/**
+ * Fetches GPS RMC data
+ * if not available returns false
+ * if available returns true and stores in the gps data
+ **/
+/*int getgpsdata()
+{
+  mySerial.println("at+gtgps=\"RMC\"");
+  mySerial.flush();
+  delay(100);
+  while (mySerial.available())
+  {
+    gpsdata = mySerial.readString();
+    if (gpsdata.indexOf("A,") > 0)
+    {
+      gpsdata = gpsdata.substring(gpsdata.indexOf("A,") + 2, gpsdata.indexOf("A,") + 28);
+      return true;
+    }
+  } //Serial.println(mySerial.readString().length());
+  return false;
+}*/
