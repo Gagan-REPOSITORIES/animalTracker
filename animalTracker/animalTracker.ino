@@ -57,6 +57,8 @@ bool gpspower = false;
 char temp[100];
 String gpsdata = "start";
 bool atCommandsWorking = true;
+bool gpsfix = false;
+bool checkGPS = false;
 
 SoftwareSerial mySerial(srx,stx);
 
@@ -311,6 +313,7 @@ int gpspowerOFF()
       if (mySerial.readString().indexOf("OK") > 0)
       {
         gpspower = false;
+        gpsfix = false;
         return true;
       }
     }
@@ -367,6 +370,7 @@ int mipcall()
  **/
 int mipcall_close()
 {
+  wdt_reset();
   mySerial.print("+++");
   for (int i = 0; i < 5; i++)
   {
@@ -425,6 +429,7 @@ int establishTCP()
 
 void serialEvent()
 {
+  statusind(0,0,1);
   wdt_reset();
   while(Serial.available()>0)
   {
@@ -432,9 +437,15 @@ void serialEvent()
     {
       int x = Serial.readBytesUntil('\n',temp,100);
       gpsdata = String(temp);
-      if(gpsdata.indexOf(",E")>0);
+      if(gpsdata.indexOf(",N")>0)
+      {
+        gpsfix = true;
+      }
       else
-      gpsdata = "Searching for GPS";
+      {      
+        //gpsdata = "Searching for GPS";
+        gpsfix = false;
+      }
     }
   }
 }
@@ -471,11 +482,11 @@ void setup()
     statusind(0,2,0);
     atCommandsWorking = false; 
     }
-  if(mpudata() == false)//Check the mpu6050 data; if we are not getting data led will blink once
-  {
+  //if(mpudata() == false)//Check the mpu6050 data; if we are not getting data led will blink once
+  //{
     statusind(0,0,1);//blinks once
     digitalWrite(mpuen,LOW);//turns off mpu6050 when not getting data
-  }
+  //}
   msmpd();
   if(gpspowerON() == false)//turns on the gps
   {
@@ -490,41 +501,57 @@ void loop()
 {
   wdt_reset();//Watch dog timer to avoid getting into infinite loop
   unsigned long currentMillis = millis()/1000;
-  if (currentMillis - previousMillis >= interval*10) 
+  if(gpsfix)
   {
-    previousMillis = currentMillis;
-    regularCheck();
+    gpspowerOFF();
   }
-  if ((currentMillis - previousMillis >= interval) && atCommandsWorking)
+  if ((currentMillis - previousMillis >= interval*2) && checkGPS && !gpspower)
+  {
+    //regularCheck();
+    gpspowerON();
+    checkGPS = false;
+  }
+  if ((currentMillis - previousMillis >= interval*3) && atCommandsWorking)
   {
     previousMillis = currentMillis;
+    Serial.println("gpspoweroff");
     gpspowerOFF();
     volt = cbc();
+    Serial.println("cbc");
     wdt_reset();
+    Serial.println("establishTCP");
     if(establishTCP() == false)
     {
+      mipcall_close();
       statusind(0,4,0);
     }
     else
     {
+      Serial.println("TransferData");
       wdt_reset();
       delay(6000);
       wdt_reset();
       mySerial.print(gpsdata);
-      delay(500);
+      delay(1000);
       mySerial.print(volt);
-      delay(500);
+      delay(1000);
       mySerial.print("DISCONNECT");
       delay(100);
       mySerial.print("+++");
       delay(1000);
       mipcall_close();
       wdt_reset();
+      Serial.println("TransferComplete");
     }
-    gpspowerON();
+    checkGPS = true;
   }
   if(gpspower == false)
     delay(1000);
-  Serial.println("Program Author : GAGAN DEEPAK R");
-  Serial.println(gpsdata);
+  else
+  {
+    Serial.println(gpsdata);
+  }
+  
+  Serial.print("Program Author : GAGAN DEEPAK R : ");
+  Serial.println(currentMillis);
 }
